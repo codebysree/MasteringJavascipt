@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="handsontable.full.min.js"></script>
+    <link rel="stylesheet" href="handsontable.full.min.css" />
+    <!-- <script src="https://handsontable.com/docs/scripts/fixer.js"></script> -->
+  </head>
+  <body>
+    <div class="example-controls-container">
+      <div class="controls">
+        <button class="filterBelow200">Show items < $200</button>
+        <button class="filterAbove200">Show items > $200</button>
+        <button class="clearAllFilters">Clear filters</button>
+      </div>
+    </div>
+    <div id="exampleFilterThroughAPI1"></div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const container = document.querySelector("#exampleFilterThroughAPI1");
+        const handsontableInstance = new Handsontable(container, {
+          data: [
+            {
+              brand: "Jetpulse",
+              model: "Racing Socks",
+              price: 30,
+              sellDate: "Oct 11, 2023",
+              sellTime: "01:23 AM",
+              inStock: false,
+            },
+            {
+              brand: "Gigabox",
+              model: "HL Mountain Frame",
+              price: 1890.9,
+              sellDate: "May 3, 2023",
+              sellTime: "11:27 AM",
+              inStock: false,
+            },
+            {
+              brand: "Camido",
+              model: "Cycling Cap",
+              price: 130.1,
+              sellDate: "Mar 27, 2023",
+              sellTime: "03:17 AM",
+              inStock: true,
+            },
+            {
+              brand: "Chatterpoint",
+              model: "Road Tire Tube",
+              price: 59,
+              sellDate: "Aug 28, 2023",
+              sellTime: "08:01 AM",
+              inStock: true,
+            },
+            {
+              brand: "Eidel",
+              model: "HL Road Tire",
+              price: 279.99,
+              sellDate: "Oct 2, 2023",
+              sellTime: "01:23 AM",
+              inStock: true,
+            },
+            {
+              brand: "Eidel",
+              model: "HL Road Tire",
+              price: 280.99,
+              sellDate: "Oct 2, 2023",
+              sellTime: "01:23 AM",
+              inStock: true,
+            },
+            {
+              brand: "Eidel",
+              model: "HL Road Tire",
+              price: 299.99,
+              sellDate: "Oct 3, 2023",
+              sellTime: "01:23 AM",
+              inStock: true,
+            },
+          ],
+          columns: [
+            {
+              title: "Brand",
+              type: "text",
+              data: "brand",
+            },
+            {
+              title: "Model",
+              type: "text",
+              data: "model",
+            },
+            {
+              title: "Price",
+              type: "numeric",
+              data: "price",
+              numericFormat: {
+                pattern: "$ 0,0.00",
+                culture: "en-US",
+              },
+            },
+            {
+              title: "Date",
+              type: "date",
+              data: "sellDate",
+              dateFormat: "MMM D, YYYY",
+              correctFormat: true,
+              className: "htRight",
+            },
+            {
+              title: "Time",
+              type: "time",
+              data: "sellTime",
+              timeFormat: "hh:mm A",
+              correctFormat: true,
+              className: "htRight",
+            },
+            {
+              title: "In stock",
+              type: "checkbox",
+              data: "inStock",
+              className: "htCenter",
+            },
+          ],
+          // enable filtering
+          filters: true,
+          // enable the column menu
+          dropdownMenu: true,
+          height: "auto",
+          autoWrapRow: true,
+          autoWrapCol: true,
+          contextMenu: true,
+          contextMenu: {
+            items: {
+              ...Handsontable.plugins.ContextMenu.DEFAULT_ITEMS,
+              filter_by_value: {
+                name: "Filter by this value",
+                callback: function (key, selection, clickEvent) {
+                  var selectedValue = handsontableInstance.getDataAtCell(
+                    selection[0].start.row,
+                    selection[0].start.col
+                  );
+                  //handsontableInstance.getPlugin("filters").clearConditions();
+                  handsontableInstance
+                    .getPlugin("filters")
+                    .addCondition(selection[0].start.col, "eq", [
+                      selectedValue,
+                    ]);
+                  handsontableInstance.getPlugin("filters").filter();
+                },
+              },
+              clear_filter: {
+                name: "Clear all filters",
+                callback: function () {
+                  handsontableInstance.getPlugin("filters").clearConditions();
+                  handsontableInstance.getPlugin("filters").filter();
+                },
+              },
+            },
+          },
+          licenseKey: "non-commercial-and-evaluation",
+          // afterInit() {
+          //   const handsontableInstance = this;
+          //   // get the `Filters` plugin, so you can use its API
+          //   const filters = handsontableInstance.getPlugin("Filters");
+          //   const date = new Date();
+          //   const pastDate = new Date(date);
+          //   pastDate.setFullYear(date.getFullYear() - 1);
+          //   const options = { year: "numeric", month: "long", day: "numeric" };
+          //   const formattedDate = pastDate.toLocaleDateString("en-US", options);
+          //   console.log(formattedDate);
+          //   filters.addCondition(3, "date_after", [formattedDate]);
+          //   filters.filter();
+          // },
+        });
+
+        // get the `Filters` plugin, so you can use its API
+        const filters = handsontableInstance.getPlugin("Filters");
+        // function applyFilter(columnIndex, value) {
+        //   hot.getPlugin("filters").clearConditions(columnIndex);
+        //   hot
+        //     .getPlugin("filters")
+        //     .addCondition(columnIndex, "contains", [value]);
+        //   hot.getPlugin("filters").filter();
+        // }
+
+        Handsontable.hooks.add("afterDropdownMenuShow", function (instance) {
+          const cleanButton = instance.menu.container.querySelector(
+            `table.htCore .htUIClearAll a[href='#']`
+          );
+          
+          if (cleanButton) {
+            cleanButton.click();
+          }
+        });
+
+        document
+          .querySelector(".filterBelow200")
+          .addEventListener("click", () => {
+            // clear any existing filters
+            filters.clearConditions();
+            // filter data by the 'Price' column (column at index 2)
+            // to display only items that are less than ('lt') $200
+            filters.addCondition(2, "lt", [200]);
+            filters.filter();
+          });
+
+        document
+          .querySelector(".filterAbove200")
+          .addEventListener("click", () => {
+            filters.clearConditions();
+            // display only items that are more than ('gt') $200
+            filters.addCondition(2, "gt", [200]);
+            filters.filter();
+          });
+
+        document
+          .querySelector(".clearAllFilters")
+          .addEventListener("click", () => {
+            filters.clearConditions();
+            filters.filter();
+          });
+      });
+    </script>
+  </body>
+</html>
